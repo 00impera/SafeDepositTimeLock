@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { createThirdwebClient, defineChain } from "thirdweb";
-import { ThirdwebProvider, ConnectButton, BuyWidget, useActiveAccount } from "thirdweb/react";
-// useActiveAccount — detects wallet connected via ConnectButton automatically
+import { createThirdwebClient, defineChain, getContract, prepareContractCall, readContract, sendTransaction, toWei, toEther } from "thirdweb";
+import { ThirdwebProvider, ConnectButton, BuyWidget, useActiveAccount, useActiveWalletChain } from "thirdweb/react";
 import { walletConnect, createWallet, inAppWallet } from "thirdweb/wallets";
 import { OpenAPI, OneClickService } from "@defuse-protocol/one-click-sdk-typescript";
 
@@ -134,9 +133,20 @@ function NearWalletWidget({ onClose }) {
   }
 
   async function loginNear() {
-    if (!window.nearApi) { setNearError("near-api-js not loaded yet, please wait..."); return; }
     setNearLoading(true);
     try {
+      if (!window.nearApi) {
+        await new Promise((resolve, reject) => {
+          const existing = document.querySelector('script[src*="near-api-js"]');
+          if (existing) { existing.addEventListener("load", resolve); return; }
+          const s = document.createElement("script");
+          s.src = "https://cdn.jsdelivr.net/npm/near-api-js@2.1.4/dist/near-api-js.min.js";
+          s.async = true;
+          s.onload = resolve;
+          s.onerror = () => reject(new Error("Failed to load near-api-js"));
+          document.head.appendChild(s);
+        });
+      }
       const { connect, keyStores, WalletConnection } = window.nearApi;
       const ks = new keyStores.BrowserLocalStorageKeyStore();
       const near = await connect({
@@ -148,7 +158,12 @@ function NearWalletWidget({ onClose }) {
         explorerUrl: "https://nearblocks.io",
       });
       const wallet = new WalletConnection(near, "timevault-near");
-      await wallet.requestSignIn({ contractId: "wrap.near", methodNames: [] });
+      await wallet.requestSignIn({
+        contractId: "wrap.near",
+        methodNames: [],
+        successUrl: window.location.origin + "/",
+        failureUrl: window.location.origin + "/",
+      });
     } catch (e) { setNearError(e.message); }
     setNearLoading(false);
   }
@@ -543,59 +558,23 @@ function AppInner() {
   const showToast = (msg, type = "ok") => setToast({ msg, type });
   const PERIODS = [30, 90, 180, 365];
 
-  // ─── Auto-sync: detect wallet from ConnectButton (thirdweb) ───────────────
-  const activeAccount = useActiveAccount();
-
-  useEffect(() => {
-    if (!activeAccount?.address) {
-      // wallet disconnected — reset state
-      setWallet(null);
-      setLocks([]);
-      setNftMap({});
-      setStats({ balance: "0", lockCount: 0, lockedMon: "0", fees: "0" });
-      return;
-    }
-    const addr = activeAccount.address;
-    async function syncWallet() {
-      try {
-        const { ethers } = await import("ethers");
-        // Use injected provider (MetaMask / any browser wallet)
-        const provider = window.ethereum
-          ? new ethers.BrowserProvider(window.ethereum)
-          : new ethers.JsonRpcProvider("https://rpc.monad.xyz");
-        let signer = null;
-        try { signer = await provider.getSigner(); } catch {}
-        setWallet({ addr, provider, signer, ethers });
-        loadData(addr, provider, ethers);
-      } catch (e) {
-        showToast("Wallet sync error: " + e.message, "err");
-      }
-    }
-    syncWallet();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeAccount?.address]);
-
   // ─── Load data ────────────────────────────────────────────────────────────
-  const loadData = useCallback(async (addr, provider, ethers) => {
+  const loadData = useCallback(async (addr) => {
     try {
       setLoading(true);
-      // Always use a reliable RPC for read operations on Monad mainnet
-      let readProvider = provider;
-      try {
-        // Test provider works
-        await provider.getBlockNumber();
-      } catch {
-        readProvider = new ethers.JsonRpcProvider("https://rpc.monad.xyz");
-      }
+      const { ethers } = await import("ethers");
+      const readProvider = new ethers.JsonRpcProvider("https://rpc.monad.xyz");
       const vault = new ethers.Contract(VAULT_ADDR, VAULT_ABI, readProvider);
-      const lockIds = await vault.getUserLocks(addr);
-      const fees = await vault.accumulatedFees();
-      const ownerAddr = await vault.owner();
+      const [lockIds, fees, ownerAddr, balance] = await Promise.all([
+        vault.getUserLocks(addr),
+        vault.accumulatedFees(),
+        vault.owner(),
+        readProvider.getBalance(addr),
+      ]);
       setAdminOwner(ownerAddr);
-      const balance = await readProvider.getBalance(addr);
       const lockDatas = await Promise.all(lockIds.map(id => vault.getLock(id)));
 
-      // Get NFT mapping from events — use last 50000 blocks to avoid timeout
+      // Get NFT mapping from events
       let nftMapping = {};
       try {
         const latestBlock = await readProvider.getBlockNumber();
@@ -603,7 +582,6 @@ function AppInner() {
         const events = await vault.queryFilter(vault.filters.Deposited(), fromBlock, "latest");
         for (const ev of events) nftMapping[ev.args.lockId.toString()] = ev.args.nftTokenId;
       } catch {
-        // fallback: try without block range
         try {
           const events = await vault.queryFilter(vault.filters.Deposited(), 0, "latest");
           for (const ev of events) nftMapping[ev.args.lockId.toString()] = ev.args.nftTokenId;
@@ -626,14 +604,30 @@ function AppInner() {
     finally { setLoading(false); }
   }, []);
 
-  // ─── Helper: get fresh signer ─────────────────────────────────────────────
-  const getSigner = async () => {
-    const { ethers } = await import("ethers");
-    if (!window.ethereum) throw new Error("No wallet detected. Please connect MetaMask.");
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    const signer = await provider.getSigner();
-    return { ethers, provider, signer };
+  // ─── Auto-sync: detect wallet from ConnectButton (thirdweb) ───────────────
+  const activeAccount = useActiveAccount();
+
+  useEffect(() => {
+    if (!activeAccount?.address) {
+      setWallet(null);
+      setLocks([]);
+      setNftMap({});
+      setStats({ balance: "0", lockCount: 0, lockedMon: "0", fees: "0" });
+      return;
+    }
+    const addr = activeAccount.address;
+    setWallet({ addr, account: activeAccount });
+    loadData(addr);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAccount?.address]);
+
+  // ─── Helper: send tx via thirdweb account (works for ALL wallet types) ────
+  const sendTx = async (contractCallParams) => {
+    if (!activeAccount) throw new Error("No wallet connected.");
+    const contract = getContract({ client, chain: monad, address: VAULT_ADDR, abi: VAULT_ABI });
+    const tx = prepareContractCall({ contract, ...contractCallParams });
+    const result = await sendTransaction({ account: activeAccount, transaction: tx });
+    return result;
   };
 
   // ─── Vault actions ────────────────────────────────────────────────────────
@@ -655,7 +649,7 @@ function AppInner() {
       await tx.wait();
       showToast("✓ Deposit success! " + depAmt + " MON locked for " + depDays + " days");
       setDepAmt("");
-      loadData(wallet.addr, wallet.provider, ethers);
+      loadData(wallet.addr, ethers);
     } catch (e) { showToast(e.message.slice(0, 80), "err"); }
     finally { setTxLoading(false); }
   };
@@ -683,7 +677,7 @@ function AppInner() {
       await tx.wait();
       showToast("✓ ERC20 deposited! " + depErcAmt + " tokens locked for " + depErcDays + " days");
       setDepToken(""); setDepErcAmt("");
-      loadData(wallet.addr, wallet.provider, ethers);
+      loadData(wallet.addr, ethers);
     } catch (e) { showToast(e.message.slice(0, 80), "err"); }
     finally { setTxLoading(false); }
   };
@@ -697,7 +691,7 @@ function AppInner() {
       const tx = await vault.withdraw(nftId);
       await tx.wait();
       showToast("✓ Withdraw success!");
-      loadData(wallet.addr, wallet.provider, ethers);
+      loadData(wallet.addr, ethers);
     } catch (e) { showToast(e.message.slice(0, 80), "err"); }
     finally { setTxLoading(false); }
   };
@@ -712,7 +706,7 @@ function AppInner() {
       const tx = await vault.earlyWithdraw(nftId);
       await tx.wait();
       showToast("✓ Early withdraw success!");
-      loadData(wallet.addr, wallet.provider, ethers);
+      loadData(wallet.addr, ethers);
     } catch (e) { showToast(e.message.slice(0, 80), "err"); }
     finally { setTxLoading(false); }
   };
@@ -726,7 +720,7 @@ function AppInner() {
       const tx = await vault.withdrawFees();
       await tx.wait();
       showToast("✓ Fees collected!");
-      loadData(wallet.addr, wallet.provider, ethers);
+      loadData(wallet.addr, ethers);
     } catch (e) { showToast(e.message.slice(0, 80), "err"); }
     finally { setTxLoading(false); }
   };
@@ -988,7 +982,7 @@ function AppInner() {
             ⇄ QUICK SWAP
           </VibButton>
           {wallet && (
-            <VibButton className="wbtn wbtn-ok" onClick={() => loadData(wallet.addr, wallet.provider, wallet.ethers)}>
+            <VibButton className="wbtn wbtn-ok" onClick={() => loadData(wallet.addr, wallet.ethers)}>
               {loading ? <span className="spin" /> : "↻"} REFRESH
             </VibButton>
           )}
@@ -1191,7 +1185,7 @@ function AppInner() {
             <div className="adm-row"><span className="adm-l">FEES ACCUMULATED</span><span className="adm-v">{stats.fees} MON</span></div>
             <div className="adm-row"><span className="adm-l">NFT CONTRACT</span><span style={{color:"var(--green)",fontSize:12}}>✓ FINALIZED</span></div>
             <VibButton className="btn-adm" style={{marginTop:6}} disabled={txLoading||Number(stats.fees)===0} onClick={doCollectFees}>
-              {txLoading?<span className="spin"/>:null}💎 COLLECT FEES — {stats.fees} MON
+              {txLoading?<span className="spin"/>:null} [̲̅$̲̅(̲̅💲)̲̅$̲̅] COLLECT FEES — {stats.fees} MON
             </VibButton>
           </div>
         )}
