@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { createThirdwebClient, defineChain } from "thirdweb";
-import { ThirdwebProvider, ConnectButton, BuyWidget, useActiveAccount } from "thirdweb/react";
-// useActiveAccount — detects wallet connected via ConnectButton automatically
+import { createThirdwebClient, defineChain, getContract, prepareContractCall, readContract, sendTransaction, toWei, toEther } from "thirdweb";
+import { ThirdwebProvider, ConnectButton, BuyWidget, useActiveAccount, useActiveWalletChain } from "thirdweb/react";
 import { walletConnect, createWallet, inAppWallet } from "thirdweb/wallets";
 import { OpenAPI, OneClickService } from "@defuse-protocol/one-click-sdk-typescript";
 
@@ -560,9 +559,10 @@ function AppInner() {
   const PERIODS = [30, 90, 180, 365];
 
   // ─── Load data ────────────────────────────────────────────────────────────
-  const loadData = useCallback(async (addr, ethers) => {
+  const loadData = useCallback(async (addr) => {
     try {
       setLoading(true);
+      const { ethers } = await import("ethers");
       const readProvider = new ethers.JsonRpcProvider("https://rpc.monad.xyz");
       const vault = new ethers.Contract(VAULT_ADDR, VAULT_ABI, readProvider);
       const [lockIds, fees, ownerAddr, balance] = await Promise.all([
@@ -616,32 +616,18 @@ function AppInner() {
       return;
     }
     const addr = activeAccount.address;
-    async function syncWallet() {
-      try {
-        const { ethers } = await import("ethers");
-        const provider = window.ethereum
-          ? new ethers.BrowserProvider(window.ethereum)
-          : new ethers.JsonRpcProvider("https://rpc.monad.xyz");
-        let signer = null;
-        try { signer = await provider.getSigner(); } catch {}
-        setWallet({ addr, provider, signer, ethers });
-        await loadData(addr, ethers);
-      } catch (e) {
-        showToast("Wallet sync error: " + e.message, "err");
-      }
-    }
-    syncWallet();
+    setWallet({ addr, account: activeAccount });
+    loadData(addr);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAccount?.address]);
 
-  // ─── Helper: get fresh signer ─────────────────────────────────────────────
-  const getSigner = async () => {
-    const { ethers } = await import("ethers");
-    if (!window.ethereum) throw new Error("No wallet detected. Please connect MetaMask.");
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    const signer = await provider.getSigner();
-    return { ethers, provider, signer };
+  // ─── Helper: send tx via thirdweb account (works for ALL wallet types) ────
+  const sendTx = async (contractCallParams) => {
+    if (!activeAccount) throw new Error("No wallet connected.");
+    const contract = getContract({ client, chain: monad, address: VAULT_ADDR, abi: VAULT_ABI });
+    const tx = prepareContractCall({ contract, ...contractCallParams });
+    const result = await sendTransaction({ account: activeAccount, transaction: tx });
+    return result;
   };
 
   // ─── Vault actions ────────────────────────────────────────────────────────
@@ -1199,7 +1185,7 @@ function AppInner() {
             <div className="adm-row"><span className="adm-l">FEES ACCUMULATED</span><span className="adm-v">{stats.fees} MON</span></div>
             <div className="adm-row"><span className="adm-l">NFT CONTRACT</span><span style={{color:"var(--green)",fontSize:12}}>✓ FINALIZED</span></div>
             <VibButton className="btn-adm" style={{marginTop:6}} disabled={txLoading||Number(stats.fees)===0} onClick={doCollectFees}>
-              {txLoading?<span className="spin"/>:null} [̲̅$̲̅(̲̅(💲))̲̅$̲̅]  COLLECT FEES — {stats.fees} MON
+              {txLoading?<span className="spin"/>:null} [̲̅$̲̅(̲̅💲)̲̅$̲̅] COLLECT FEES — {stats.fees} MON
             </VibButton>
           </div>
         )}
