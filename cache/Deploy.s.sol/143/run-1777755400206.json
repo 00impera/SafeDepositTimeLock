@@ -1,0 +1,13 @@
+{
+  "transactions": [
+    {
+      "rpc": "https://rpc.monad.xyz"
+    },
+    {
+      "rpc": "https://rpc.monad.xyz"
+    },
+    {
+      "rpc": "https://rpc.monad.xyz"
+    }
+  ]
+}

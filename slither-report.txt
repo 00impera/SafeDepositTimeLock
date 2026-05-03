@@ -1,0 +1,177 @@
+'forge clean' running (wd: /home/nelutu/LiquidStaking)
+'forge config --json' running
+'forge build --build-info --skip ./test/** ./script/** --force' running (wd: /home/nelutu/LiquidStaking)
+INFO:Detectors:
+Detector: incorrect-equality
+LiquidStaking.pendingRewards(address) (src/LiquidStaking.sol#116-122) uses a dangerous strict equality:
+	- s.amount == 0 (src/LiquidStaking.sol#118)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+INFO:Detectors:
+Detector: unused-return
+LiquidStaking.claimRewards() (src/LiquidStaking.sol#104-114) ignores return value by IRewardToken(goldToken).mint(msg.sender,rewards) (src/LiquidStaking.sol#111)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unused-return
+INFO:Detectors:
+Detector: shadowing-local
+GoldToken.constructor(address)._owner (src/GoldToken.sol#8) shadows:
+	- Ownable._owner (lib/openzeppelin-contracts/contracts/access/Ownable.sol#21) (state variable)
+LiquidStaking.constructor(address,address,address,address)._owner (src/LiquidStaking.sol#43) shadows:
+	- Ownable._owner (lib/openzeppelin-contracts/contracts/access/Ownable.sol#21) (state variable)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#local-variable-shadowing
+INFO:Detectors:
+Detector: missing-zero-check
+DragonToken.setDistributor(address)._distributor (src/DragonToken.sol#15) lacks a zero-check on :
+		- distributor = _distributor (src/DragonToken.sol#16)
+LiquidStaking.setTokens(address,address)._gold (src/LiquidStaking.sol#146) lacks a zero-check on :
+		- goldToken = _gold (src/LiquidStaking.sol#147)
+LiquidStaking.setTokens(address,address)._dragon (src/LiquidStaking.sol#146) lacks a zero-check on :
+		- dragonToken = _dragon (src/LiquidStaking.sol#147)
+LiquidStaking.setTreasury(address)._t (src/LiquidStaking.sol#150) lacks a zero-check on :
+		- treasury = _t (src/LiquidStaking.sol#151)
+Rescue.execute(address,bytes).target (src/Rescue.sol#13) lacks a zero-check on :
+		- (ok,ret) = target.call(data) (src/Rescue.sol#14)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-zero-address-validation
+INFO:Detectors:
+Detector: timestamp
+LiquidStaking.requestUnstake(uint256) (src/LiquidStaking.sol#65-75) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(amount > 0 && amount <= s.amount,Bad amount) (src/LiquidStaking.sol#67)
+	- require(bool,string)(s.unstakeAmount == 0,Pending unstake exists) (src/LiquidStaking.sol#68)
+LiquidStaking.claimUnstake() (src/LiquidStaking.sol#77-87) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(s.unstakeAmount > 0,Nothing to claim) (src/LiquidStaking.sol#79)
+	- require(bool,string)(block.timestamp >= s.unstakeAt,Still cooling down) (src/LiquidStaking.sol#80)
+LiquidStaking.instantUnstake(uint256) (src/LiquidStaking.sol#89-102) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(amount > 0 && amount <= s.amount,Bad amount) (src/LiquidStaking.sol#91)
+LiquidStaking.pendingRewards(address) (src/LiquidStaking.sol#116-122) uses timestamp for comparisons
+	Dangerous comparisons:
+	- s.amount == 0 (src/LiquidStaking.sol#118)
+LiquidStaking.stakeInfo(address) (src/LiquidStaking.sol#124-134) uses timestamp for comparisons
+	Dangerous comparisons:
+	- (s.amount,s.stakedAt,s.pendingRewards + accrued,s.unstakeAmount,s.unstakeAt,s.unstakeAmount > 0 && block.timestamp >= s.unstakeAt) (src/LiquidStaking.sol#131-133)
+	- s.amount > 0 (src/LiquidStaking.sol#129)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+INFO:Detectors:
+Detector: assembly
+StorageSlot.getAddressSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#66-70) uses assembly
+	- INLINE ASM (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#67-69)
+StorageSlot.getBooleanSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#75-79) uses assembly
+	- INLINE ASM (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#76-78)
+StorageSlot.getBytes32Slot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#84-88) uses assembly
+	- INLINE ASM (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#85-87)
+StorageSlot.getUint256Slot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#93-97) uses assembly
+	- INLINE ASM (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#94-96)
+StorageSlot.getInt256Slot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#102-106) uses assembly
+	- INLINE ASM (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#103-105)
+StorageSlot.getStringSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#111-115) uses assembly
+	- INLINE ASM (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#112-114)
+StorageSlot.getStringSlot(string) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#120-124) uses assembly
+	- INLINE ASM (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#121-123)
+StorageSlot.getBytesSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#129-133) uses assembly
+	- INLINE ASM (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#130-132)
+StorageSlot.getBytesSlot(bytes) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#138-142) uses assembly
+	- INLINE ASM (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#139-141)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
+INFO:Detectors:
+Detector: pragma
+4 different versions of Solidity are used:
+	- Version constraint ^0.8.20 is used by:
+		-^0.8.20 (lib/openzeppelin-contracts/contracts/access/Ownable.sol#4)
+		-^0.8.20 (lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol#4)
+		-^0.8.20 (lib/openzeppelin-contracts/contracts/utils/Context.sol#4)
+		-^0.8.20 (lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol#4)
+		-^0.8.20 (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#5)
+		-^0.8.20 (src/DragonToken.sol#2)
+		-^0.8.20 (src/GoldToken.sol#2)
+		-^0.8.20 (src/LiquidStaking.sol#2)
+		-^0.8.20 (src/Rescue.sol#2)
+	- Version constraint >=0.8.4 is used by:
+		->=0.8.4 (lib/openzeppelin-contracts/contracts/interfaces/draft-IERC6093.sol#4)
+	- Version constraint >=0.4.16 is used by:
+		->=0.4.16 (lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol#4)
+	- Version constraint >=0.6.2 is used by:
+		->=0.6.2 (lib/openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol#4)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#different-pragma-directives-are-used
+INFO:Detectors:
+Detector: solc-version
+Version constraint ^0.8.20 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)
+	- VerbatimInvalidDeduplication
+	- FullInlinerNonExpressionSplitArgumentEvaluationOrder
+	- MissingSideEffectsOnSelectorAccess.
+It is used by:
+	- ^0.8.20 (lib/openzeppelin-contracts/contracts/access/Ownable.sol#4)
+	- ^0.8.20 (lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol#4)
+	- ^0.8.20 (lib/openzeppelin-contracts/contracts/utils/Context.sol#4)
+	- ^0.8.20 (lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol#4)
+	- ^0.8.20 (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#5)
+	- ^0.8.20 (src/DragonToken.sol#2)
+	- ^0.8.20 (src/GoldToken.sol#2)
+	- ^0.8.20 (src/LiquidStaking.sol#2)
+	- ^0.8.20 (src/Rescue.sol#2)
+Version constraint >=0.8.4 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)
+	- FullInlinerNonExpressionSplitArgumentEvaluationOrder
+	- MissingSideEffectsOnSelectorAccess
+	- AbiReencodingHeadOverflowWithStaticArrayCleanup
+	- DirtyBytesArrayToStorage
+	- DataLocationChangeInInternalOverride
+	- NestedCalldataArrayAbiReencodingSizeValidation
+	- SignedImmutables.
+It is used by:
+	- >=0.8.4 (lib/openzeppelin-contracts/contracts/interfaces/draft-IERC6093.sol#4)
+Version constraint >=0.4.16 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)
+	- DirtyBytesArrayToStorage
+	- ABIDecodeTwoDimensionalArrayMemory
+	- KeccakCaching
+	- EmptyByteArrayCopy
+	- DynamicArrayCleanup
+	- ImplicitConstructorCallvalueCheck
+	- TupleAssignmentMultiStackSlotComponents
+	- MemoryArrayCreationOverflow
+	- privateCanBeOverridden
+	- SignedArrayStorageCopy
+	- ABIEncoderV2StorageArrayWithMultiSlotElement
+	- DynamicConstructorArgumentsClippedABIV2
+	- UninitializedFunctionPointerInConstructor_0.4.x
+	- IncorrectEventSignatureInLibraries_0.4.x
+	- ExpExponentCleanup
+	- NestedArrayFunctionCallDecoder
+	- ZeroFunctionSelector.
+It is used by:
+	- >=0.4.16 (lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol#4)
+Version constraint >=0.6.2 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)
+	- MissingSideEffectsOnSelectorAccess
+	- AbiReencodingHeadOverflowWithStaticArrayCleanup
+	- DirtyBytesArrayToStorage
+	- NestedCalldataArrayAbiReencodingSizeValidation
+	- ABIDecodeTwoDimensionalArrayMemory
+	- KeccakCaching
+	- EmptyByteArrayCopy
+	- DynamicArrayCleanup
+	- MissingEscapingInFormatting
+	- ArraySliceDynamicallyEncodedBaseType
+	- ImplicitConstructorCallvalueCheck
+	- TupleAssignmentMultiStackSlotComponents
+	- MemoryArrayCreationOverflow.
+It is used by:
+	- >=0.6.2 (lib/openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol#4)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity
+INFO:Detectors:
+Detector: low-level-calls
+Low level call in LiquidStaking.claimUnstake() (src/LiquidStaking.sol#77-87):
+	- (ok,None) = msg.sender.call{value: amount}() (src/LiquidStaking.sol#84)
+Low level call in LiquidStaking.instantUnstake(uint256) (src/LiquidStaking.sol#89-102):
+	- (t1,None) = treasury.call{value: penalty}() (src/LiquidStaking.sol#97)
+	- (t2,None) = msg.sender.call{value: payout}() (src/LiquidStaking.sol#99)
+Low level call in LiquidStaking.emergencyWithdraw() (src/LiquidStaking.sol#154-159):
+	- (ok,None) = owner().call{value: b}() (src/LiquidStaking.sol#157)
+Low level call in Rescue.execute(address,bytes) (src/Rescue.sol#13-17):
+	- (ok,ret) = target.call(data) (src/Rescue.sol#14)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+INFO:Detectors:
+Detector: naming-convention
+Parameter DragonToken.setDistributor(address)._distributor (src/DragonToken.sol#15) is not in mixedCase
+Parameter LiquidStaking.setTokens(address,address)._gold (src/LiquidStaking.sol#146) is not in mixedCase
+Parameter LiquidStaking.setTokens(address,address)._dragon (src/LiquidStaking.sol#146) is not in mixedCase
+Parameter LiquidStaking.setTreasury(address)._t (src/LiquidStaking.sol#150) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+INFO:Slither:. analyzed (15 contracts with 101 detectors), 36 result(s) found

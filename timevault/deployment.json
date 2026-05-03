@@ -1,0 +1,19 @@
+{
+  "network": "monad-mainnet",
+  "chainId": 143,
+  "deployedAt": "2026-05-03T01:54:01.367Z",
+  "deployer": "0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e",
+  "owner": "0x592B35c8917eD36c39Ef73D0F5e92B0173560b2e",
+  "contracts": {
+    "VaultNFT": {
+      "address": "0x1C905DE49797b33cc368FC9868aBb2cBa1178773",
+      "txHash": "0x4f8487c47c6ef428c36b16c08b8bd3e8ceb22d4cc3614cb5404bcf37ca2943d6",
+      "gasUsed": "2954363"
+    },
+    "TimeVault": {
+      "address": "0x653b0fF0d62c41DFF514D7543784e9F6426020aB",
+      "txHash": "0x644e07bc3d04cfaa3410f5d9a59746534ac28cd3150a02bae5047ed3ad68e5d3",
+      "gasUsed": "2086574"
+    }
+  }
+}
