@@ -134,9 +134,20 @@ function NearWalletWidget({ onClose }) {
   }
 
   async function loginNear() {
-    if (!window.nearApi) { setNearError("near-api-js not loaded yet, please wait..."); return; }
     setNearLoading(true);
     try {
+      if (!window.nearApi) {
+        await new Promise((resolve, reject) => {
+          const existing = document.querySelector('script[src*="near-api-js"]');
+          if (existing) { existing.addEventListener("load", resolve); return; }
+          const s = document.createElement("script");
+          s.src = "https://cdn.jsdelivr.net/npm/near-api-js@2.1.4/dist/near-api-js.min.js";
+          s.async = true;
+          s.onload = resolve;
+          s.onerror = () => reject(new Error("Failed to load near-api-js"));
+          document.head.appendChild(s);
+        });
+      }
       const { connect, keyStores, WalletConnection } = window.nearApi;
       const ks = new keyStores.BrowserLocalStorageKeyStore();
       const near = await connect({
@@ -148,7 +159,12 @@ function NearWalletWidget({ onClose }) {
         explorerUrl: "https://nearblocks.io",
       });
       const wallet = new WalletConnection(near, "timevault-near");
-      await wallet.requestSignIn({ contractId: "wrap.near", methodNames: [] });
+      await wallet.requestSignIn({
+        contractId: "wrap.near",
+        methodNames: [],
+        successUrl: window.location.origin + "/",
+        failureUrl: window.location.origin + "/",
+      });
     } catch (e) { setNearError(e.message); }
     setNearLoading(false);
   }
@@ -579,14 +595,8 @@ function AppInner() {
   const loadData = useCallback(async (addr, provider, ethers) => {
     try {
       setLoading(true);
-      // Always use a reliable RPC for read operations on Monad mainnet
-      let readProvider = provider;
-      try {
-        // Test provider works
-        await provider.getBlockNumber();
-      } catch {
-        readProvider = new ethers.JsonRpcProvider("https://rpc.monad.xyz");
-      }
+      // Always use Monad RPC directly for reliable reads
+      const readProvider = new ethers.JsonRpcProvider("https://rpc.monad.xyz");
       const vault = new ethers.Contract(VAULT_ADDR, VAULT_ABI, readProvider);
       const lockIds = await vault.getUserLocks(addr);
       const fees = await vault.accumulatedFees();
@@ -1191,7 +1201,7 @@ function AppInner() {
             <div className="adm-row"><span className="adm-l">FEES ACCUMULATED</span><span className="adm-v">{stats.fees} MON</span></div>
             <div className="adm-row"><span className="adm-l">NFT CONTRACT</span><span style={{color:"var(--green)",fontSize:12}}>✓ FINALIZED</span></div>
             <VibButton className="btn-adm" style={{marginTop:6}} disabled={txLoading||Number(stats.fees)===0} onClick={doCollectFees}>
-              {txLoading?<span className="spin"/>:null}💎 COLLECT FEES — {stats.fees} MON
+              {txLoading?<span className="spin"/>:null} [̲̅$̲̅(̲̅(💲))̲̅$̲̅] COLLECT FEES — {stats.fees} MON
             </VibButton>
           </div>
         )}
