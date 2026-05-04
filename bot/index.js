@@ -39,7 +39,7 @@ const VAULT_ABI = [
 http.createServer((req, res) => res.end("OK")).listen(process.env.PORT || 3000);
 
 // ── INIT ─────────────────────────────────────────────────────────
-const bot      = new TelegramBot(BOT_TOKEN, { polling: true });
+const bot      = new TelegramBot(BOT_TOKEN, { polling: false }); // ← polling: false, started later
 const provider = new ethers.JsonRpcProvider(MONAD_RPC);
 const vault    = new ethers.Contract(VAULT_ADDR, VAULT_ABI, provider);
 
@@ -938,7 +938,15 @@ setInterval(async () => {
 // ── ERROR HANDLING ────────────────────────────────────────────────
 bot.on("polling_error", (err) => console.error("Polling error:", err.message));
 
-console.log("🏦 @LiquidStakingVault_Bot started on Monad Mainnet");
-console.log(`   dApp:  ${DAPP_URL}`);
-console.log(`   Vault: ${VAULT_ADDR}`);
-console.log(`   NFT:   ${NFT_ADDR}`);
+// ── GRACEFUL SHUTDOWN ─────────────────────────────────────────────
+process.once("SIGINT",  () => { bot.stopPolling(); process.exit(0); });
+process.once("SIGTERM", () => { bot.stopPolling(); process.exit(0); });
+
+// ── DELAYED POLLING START (8s grace for Render redeploys) ─────────
+setTimeout(() => {
+  bot.startPolling();
+  console.log("🏦 @LiquidStakingVault_Bot started on Monad Mainnet");
+  console.log(`   dApp:  ${DAPP_URL}`);
+  console.log(`   Vault: ${VAULT_ADDR}`);
+  console.log(`   NFT:   ${NFT_ADDR}`);
+}, 8000);
