@@ -1208,12 +1208,23 @@ function AppInner() {
         </Modal>
       )}
 
-    {/* SECURITY BADGES */}
-      <div style={{position:"fixed",bottom:12,left:12,zIndex:9998,display:"flex",gap:4,flexWrap:"wrap",maxWidth:320}}>
-        <span style={{padding:"2px 8px",borderRadius:4,fontSize:8,fontWeight:"bold",background:"#0a1a0a",border:"1px solid #39FF14",color:"#39FF14",letterSpacing:1}}>✓ SLITHER AUDITED</span>
-        <span style={{padding:"2px 8px",borderRadius:4,fontSize:8,fontWeight:"bold",background:"#0a0a1a",border:"1px solid #a259ff",color:"#a259ff",letterSpacing:1}}>✓ REENTRANCY GUARD</span>
-        <span style={{padding:"2px 8px",borderRadius:4,fontSize:8,fontWeight:"bold",background:"#0a1218",border:"1px solid #00eaff",color:"#00eaff",letterSpacing:1}}>✓ OPENZEPPELIN v5</span>
-        <span style={{padding:"2px 8px",borderRadius:4,fontSize:8,fontWeight:"bold",background:"#0a1a0a",border:"1px solid #C8960C",color:"#C8960C",letterSpacing:1}}>✓ SOLIDITY 0.8.24</span>
+   {/* SECURITY BADGES */}
+      <div style={{position:"fixed",bottom:12,left:12,zIndex:9998,display:"flex",gap:6,flexWrap:"wrap",maxWidth:400}}>
+        <a href="https://github.com/00impera/SafeDepositTimeLock" target="_blank" rel="noreferrer">
+          <img src="https://img.shields.io/badge/Slither-Analyzed-brightgreen" alt="Slither" style={{height:18}} />
+        </a>
+        <a href="https://github.com/00impera/SafeDepositTimeLock" target="_blank" rel="noreferrer">
+          <img src="https://img.shields.io/badge/Security-15%2F15%20Checks-39FF14" alt="Security" style={{height:18}} />
+        </a>
+        <a href="https://github.com/OpenZeppelin/openzeppelin-contracts" target="_blank" rel="noreferrer">
+          <img src="https://img.shields.io/badge/OpenZeppelin-v5-4e5ee4" alt="OpenZeppelin" style={{height:18}} />
+        </a>
+        <a href="https://monad.socialscan.io/address/0x653b0fF0d62c41DFF514D7543784e9F6426020aB" target="_blank" rel="noreferrer">
+          <img src="https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity" alt="Solidity" style={{height:18}} />
+        </a>
+        <a href="https://safedeposittimelock.pages.dev" target="_blank" rel="noreferrer">
+          <img src="https://img.shields.io/badge/Monad-Mainnet-a259ff" alt="Monad" style={{height:18}} />
+        </a>
       </div>
 
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
@@ -1223,4 +1234,4 @@ function AppInner() {
 
 export default function App() {
   return <ThirdwebProvider><AppInner /></ThirdwebProvider>;
-} 
+}
