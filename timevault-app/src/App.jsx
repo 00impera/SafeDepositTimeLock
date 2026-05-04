@@ -1208,6 +1208,14 @@ function AppInner() {
         </Modal>
       )}
 
+    {/* SECURITY BADGES */}
+      <div style={{position:"fixed",bottom:12,left:12,zIndex:9998,display:"flex",gap:4,flexWrap:"wrap",maxWidth:320}}>
+        <span style={{padding:"2px 8px",borderRadius:4,fontSize:8,fontWeight:"bold",background:"#0a1a0a",border:"1px solid #39FF14",color:"#39FF14",letterSpacing:1}}>✓ SLITHER AUDITED</span>
+        <span style={{padding:"2px 8px",borderRadius:4,fontSize:8,fontWeight:"bold",background:"#0a0a1a",border:"1px solid #a259ff",color:"#a259ff",letterSpacing:1}}>✓ REENTRANCY GUARD</span>
+        <span style={{padding:"2px 8px",borderRadius:4,fontSize:8,fontWeight:"bold",background:"#0a1218",border:"1px solid #00eaff",color:"#00eaff",letterSpacing:1}}>✓ OPENZEPPELIN v5</span>
+        <span style={{padding:"2px 8px",borderRadius:4,fontSize:8,fontWeight:"bold",background:"#0a1a0a",border:"1px solid #C8960C",color:"#C8960C",letterSpacing:1}}>✓ SOLIDITY 0.8.24</span>
+      </div>
+
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </>
   );
@@ -1215,4 +1223,4 @@ function AppInner() {
 
 export default function App() {
   return <ThirdwebProvider><AppInner /></ThirdwebProvider>;
-}
+} 
